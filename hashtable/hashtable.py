@@ -23,8 +23,9 @@ class HashTable:
 
     def __init__(self, capacity=MIN_CAPACITY):
         self.capacity = capacity
-        self.array = [None]*MIN_CAPACITY
+        self.array = [None] * self.capacity
         self.count = 0
+        self.max_load = 0.8
 
     def get_num_slots(self):
         """
@@ -85,6 +86,9 @@ class HashTable:
 
         Implement this.
         """
+        if self.get_load_factor() >= self.max_load:
+            self.resize(self.capacity * 2)
+
         i = self.hash_index(key)
 
         if self.array[i] == None:
@@ -103,7 +107,10 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        i = self.hash_index(key)
+
+        if self.array[i].key == key:
+            self.array[i].value = None
 
     def get(self, key):
         """
@@ -113,7 +120,14 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        i = self.hash_index(key)
+        current = self.array[i]
+
+        while current != None:
+            if current.key == key:
+                return current.value
+            else:
+                return None
 
     def resize(self, new_capacity):
         """
@@ -122,7 +136,18 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
+        old = self.array
+        new = [None] * new_capacity
+        self.array = new  # replace current storage with new
+        self.count = len(new)
+
+        for index in old:
+            if index != None:
+                current = index
+                while current:
+                    # insert new key value pair
+                    self.put(current.key, current.value)
 
 
 if __name__ == "__main__":
