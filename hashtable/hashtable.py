@@ -1,3 +1,50 @@
+class LinkedList:
+    def __init__(self):
+        self.head = None
+
+    def find(self, key):
+        # start at the head, loop, find, return
+        current = self.head
+        while current is not None:
+            if current.key == key:
+                return current
+            current = current.next
+
+        return None
+
+    def remove(self, key):
+        # keep track
+        current = self.head
+
+        if current is None:
+            return None
+        # remove head
+        if current.key == key:
+            self.head = current.next
+            return current
+        else:
+            # POINTERS: est the previous first, pass the head
+            previous = current
+            current = current.next
+
+            while current is not None:
+                if current.key == key:
+                    previous.next = current.next  # get rid of current
+                    return current  # return the deleted node
+
+            return None
+
+    # must add to the array
+    def add_to_head(self, key, value):
+        # reassign the current head
+        node = HashTableEntry(key, value)
+        if self.head is not None:
+            node.next = self.head
+
+        # add new head to place
+        self.head = node
+
+
 class HashTableEntry:
     """
     Linked List hash table key/value pair
@@ -7,6 +54,9 @@ class HashTableEntry:
         self.key = key
         self.value = value
         self.next = None
+
+    def __str__(self):
+        f'{self.key}, {self.value}'
 
 
 # Hash table can't have fewer than this many slots
@@ -21,11 +71,13 @@ class HashTable:
     Implement this.
     """
 
-    def __init__(self, capacity=MIN_CAPACITY):
+    def __init__(self, capacity):
         self.capacity = capacity
         self.array = [None] * self.capacity
         self.count = 0
-        self.max_load = 0.8
+
+        for num in range(self.capacity):
+            self.array[num] = LinkedList()
 
     def get_num_slots(self):
         """
@@ -86,18 +138,21 @@ class HashTable:
 
         Implement this.
         """
-        if self.get_load_factor() >= self.max_load:
+        load_factor = self.get_load_factor()
+        # When load factor increases above 0.7, automatically rehash the table to double its previous size.
+        if load_factor > 0.7:
             self.resize(self.capacity * 2)
 
-        i = self.hash_index(key)
+        # get the hash index
+        index = self.hash_index(key)
+        # check if there is already an existing node for this key
+        existing_node = self.array[index].find(key)
 
-        if self.array[i] == None:
-            self.array[i] = HashTableEntry(key, value)
+        if existing_node is not None:
+            existing_node.value = value
+        else:
+            self.array[index].add_to_head(key, value)
             self.count += 1
-        elif self.array[i] != None:
-            self.array[i] = HashTableEntry(key, value)
-            self.count += 1
-            return
 
     def delete(self, key):
         """
@@ -107,10 +162,17 @@ class HashTable:
 
         Implement this.
         """
-        i = self.hash_index(key)
+        index = self.hash_index(key)
+        # delete from LinkedList
+        deleted = self.array[index].remove(key)
 
-        if self.array[i].key == key:
-            self.array[i].value = None
+        if deleted is None:
+            print("Key Does NOT Exist!")
+        else:
+            self.count -= 1
+
+        # if self.array[i].key == key:
+        #     self.array[i].value = None
 
     def get(self, key):
         """
@@ -120,14 +182,11 @@ class HashTable:
 
         Implement this.
         """
-        i = self.hash_index(key)
-        current = self.array[i]
-
-        while current != None:
-            if current.key == key:
-                return current.value
-            else:
-                return None
+        index = self.hash_index(key)
+        result = self.array[index].find(key)
+        if result is None:
+            return None
+        return result.value
 
     def resize(self, new_capacity):
         """
@@ -136,18 +195,28 @@ class HashTable:
 
         Implement this.
         """
+        # save old array
+        old_array = self.array
+        # new array with capacity
+        new_array = [None] * new_capacity
 
-        old = self.array
-        new = [None] * new_capacity
-        self.array = new  # replace current storage with new
-        self.count = len(new)
+        for num in range(new_capacity):
+            new_array[num] = LinkedList()
+        # update array
+        self.array = new_array
+        # update capacity
+        self.capacity = new_capacity
+        # reset item count
+        self.count = 0
+        # iterate through previous array
+        for index in old_array:
+            current = index.head
 
-        for index in old:
-            if index != None:
-                current = index
-                while current:
-                    # insert new key value pair
-                    self.put(current.key, current.value)
+            while current is not None:
+                # store in the new array
+                self.put(current.key, current.value)
+
+                current = current.next
 
 
 if __name__ == "__main__":
